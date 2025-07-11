@@ -66,3 +66,5 @@ def test_signal_from_spread_none(monkeypatch):
     monkeypatch.setattr("pairsplus.signals.zscore", lambda s: pd.Series([0]*len(s)))
     signal = signal_from_spread(df, "A", "B")
     assert signal is None
+
+
