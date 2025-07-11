@@ -1,1 +1,4 @@
 # pairsplus-bot
+trading program
+
+
