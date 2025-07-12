@@ -1,1 +1,4 @@
 2025-07-11 13:52:51 | ENTRY | Pair: ('AMZN', 'BAC') | Side: SHORT_SPREAD | Z: 1.9008595014283194
+2025-07-12 11:07:40,520 | INFO | pairsplus.notifier | [Notifier] Message sent to Discord successfully.
+2025-07-12 11:07:40,820 | INFO | pairsplus.notifier | [Notifier] Message sent to Discord successfully.
+2025-07-12 11:07:41,080 | INFO | pairsplus.notifier | [Notifier] Message sent to Discord successfully.

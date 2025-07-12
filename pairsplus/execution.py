@@ -2,32 +2,67 @@
 pairsplus/execution.py
 
 Handles trade execution via Alpaca TradingClient.
-Includes price lookups for sizing and robust error handling.
+Supports:
+- Limit order pegging
+- Notional splitting
+- CSV trade logging
+- File + console logging
+- Discord notifications
+- Prometheus metrics
 """
 
 import decimal
 import time
 import logging
+import csv
+from datetime import datetime
+from .notifier import send_discord_message
+from prometheus_client import Counter, Gauge, start_http_server
+
 from alpaca.trading.client import TradingClient
-from alpaca.trading.requests import MarketOrderRequest
+from alpaca.trading.requests import MarketOrderRequest, LimitOrderRequest
 from alpaca.trading.enums import OrderSide, TimeInForce
 from alpaca.data.historical import StockHistoricalDataClient
 from alpaca.data.requests import StockLatestTradeRequest
-from .config import ALPACA_KEY, ALPACA_SECRET
 
-# Set up logging
-logging.basicConfig(level=logging.INFO)
+from .config import (
+    ALPACA_KEY,
+    ALPACA_SECRET,
+    ORDER_TYPE,
+    PEG_DISTANCE,
+    SPLIT_NOTIONAL,
+    BASE_DIR
+)
+
+# === Logging Setup ===
+LOG_FILE = BASE_DIR / "trade_Log.txt"
+TRADE_LOG_CSV = BASE_DIR / "positions.csv"
+
+log_format = "%(asctime)s | %(levelname)s | %(name)s | %(message)s"
+logging.basicConfig(
+    level=logging.INFO,
+    format=log_format,
+    handlers=[
+        logging.FileHandler(LOG_FILE, mode='a'),
+        logging.StreamHandler()
+    ]
+)
 logger = logging.getLogger(__name__)
 
-# Initialize Alpaca clients
+# === Prometheus Metrics ===
+trades_opened_total = Counter('trades_opened_total', 'Number of trades opened')
+trades_closed_total = Counter('trades_closed_total', 'Number of trades closed')
+trade_errors_total = Counter('trade_errors_total', 'Number of trade errors')
+orders_attempted_total = Counter('orders_attempted_total', 'Number of orders attempted')
+equity_value = Gauge('equity_value', 'Simulated equity curve')
+
+# === Initialize Alpaca Clients ===
 client = TradingClient(ALPACA_KEY, ALPACA_SECRET, paper=True)
 data_client = StockHistoricalDataClient(ALPACA_KEY, ALPACA_SECRET)
 
 
+# === Helper: Fetch Latest Price ===
 def get_latest_price(symbol):
-    """
-    Fetch the most recent trade price for a given symbol.
-    """
     try:
         trades = data_client.get_stock_latest_trade(
             StockLatestTradeRequest(symbol_or_symbols=symbol)
@@ -37,67 +72,134 @@ def get_latest_price(symbol):
         return price
     except Exception as e:
         logger.error(f"Failed to fetch latest price for {symbol}: {e}")
+        trade_errors_total.inc()
         return None
 
 
+# === Helper: CSV Trade Log ===
+def log_trade_csv(action, ticker, qty, price=None):
+    row = {
+        "timestamp": datetime.utcnow().isoformat(),
+        "action": action,
+        "ticker": ticker,
+        "qty": qty,
+        "price": price or "N/A"
+    }
+    TRADE_LOG_CSV.parent.mkdir(parents=True, exist_ok=True)
+    exists = TRADE_LOG_CSV.exists()
+
+    with open(TRADE_LOG_CSV, mode='a', newline='') as f:
+        writer = csv.DictWriter(f, fieldnames=row.keys())
+        if not exists:
+            writer.writeheader()
+        writer.writerow(row)
+    logger.info(f"Logged trade to CSV: {row}")
+
+
+# === Helper: Place Order ===
 def place_order(req):
-    """
-    Submit an order with up to 3 retry attempts on failure.
-    """
+    orders_attempted_total.inc()
     for attempt in range(3):
         try:
             logger.info(f"Submitting order: {req}")
             client.submit_order(order_data=req)
+            log_trade_csv(
+                action=req.side.value,
+                ticker=req.symbol,
+                qty=req.qty if hasattr(req, 'qty') else "fractional",
+                price="MARKET"
+            )
+            # ✅ Notify
+            send_discord_message(
+                f"✅ Order: {req.side.value.upper()} {req.symbol} "
+                f"Qty: {req.qty if hasattr(req, 'qty') else 'fractional'}"
+            )
             return True
         except Exception as e:
             logger.warning(f"Order failed (attempt {attempt + 1}): {str(e)}")
+            trade_errors_total.inc()
             time.sleep(2)
     logger.error("Order failed after 3 attempts.")
     return False
 
+
+# === Helper: Build Market or Limit Order ===
+def build_order_request(symbol, side, qty=None, notional=None, price=None):
+    if ORDER_TYPE == "LIMIT" and price is not None:
+        peg_factor = 1 + (PEG_DISTANCE if side == OrderSide.BUY else -PEG_DISTANCE)
+        limit_price = price * peg_factor
+        logger.info(f"Pegging {side.name} order for {symbol} at limit {limit_price:.2f} (peg distance {PEG_DISTANCE})")
+        return LimitOrderRequest(
+            symbol=symbol,
+            qty=int(qty),
+            side=side,
+            time_in_force=TimeInForce.DAY,
+            limit_price=decimal.Decimal(limit_price)
+        )
+    else:
+        return MarketOrderRequest(
+            symbol=symbol,
+            qty=int(qty) if qty else None,
+            notional=decimal.Decimal(notional) if notional else None,
+            side=side,
+            time_in_force=TimeInForce.DAY,
+        )
+
+
+# === Helper: Split Notional if Configured ===
+def maybe_split_notional(notional):
+    if SPLIT_NOTIONAL and notional > 20:
+        half = notional / 2
+        logger.info(f"Smart notional split: {notional} -> {half} + {half}")
+        return [half, half]
+    else:
+        return [notional]
+
+
+# === Close Existing Pair ===
 def close_pair_trade(ticker_long, ticker_short, qty=1):
     logger.info(f"Closing pair trade: SELL {ticker_long}, BUY {ticker_short}")
 
-    sell_req = MarketOrderRequest(
+    price_long = get_latest_price(ticker_long)
+    price_short = get_latest_price(ticker_short)
+
+    sell_req = build_order_request(
         symbol=ticker_long,
-        qty=qty,
         side=OrderSide.SELL,
-        time_in_force=TimeInForce.DAY,
-    )
-
-    buy_req = MarketOrderRequest(
-        symbol=ticker_short,
         qty=qty,
+        price=price_long
+    )
+    buy_req = build_order_request(
+        symbol=ticker_short,
         side=OrderSide.BUY,
-        time_in_force=TimeInForce.DAY,
+        qty=qty,
+        price=price_short
     )
 
-    place_order(sell_req)
-    place_order(buy_req)
+    if place_order(sell_req) and place_order(buy_req):
+        trades_closed_total.inc()
+        send_discord_message(f"📉 Closed pair trade: SELL {ticker_long}, BUY {ticker_short}")
 
 
+# === Place New Pair Trade ===
 def place_pair_trade(ticker_long, ticker_short, notional=50):
-    """
-    Places a pairs trade with:
-    - Fractional notional BUY on long leg.
-    - Integer qty SELL on short leg.
-    """
     logger.info(f"Placing pair trade: LONG {ticker_long}, SHORT {ticker_short}, Notional: {notional}")
 
-    # ✅ Long leg: fractional notional buy
-    long_req = MarketOrderRequest(
-        symbol=ticker_long,
-        notional=decimal.Decimal(notional),
-        side=OrderSide.BUY,
-        time_in_force=TimeInForce.DAY,
-    )
-    success_long = place_order(long_req)
+    # --- Long leg ---
+    for chunk in maybe_split_notional(notional):
+        long_price = get_latest_price(ticker_long)
+        long_req = build_order_request(
+            symbol=ticker_long,
+            side=OrderSide.BUY,
+            notional=chunk,
+            price=long_price
+        )
+        success_long = place_order(long_req)
+        if not success_long:
+            logger.error("Long leg order failed. Aborting pair trade.")
+            return
 
-    if not success_long:
-        logger.error("Long leg order failed. Aborting pair trade.")
-        return
-
-    # ✅ Short leg: must use integer quantity
+    # --- Short leg ---
     short_price = get_latest_price(ticker_short)
     if short_price is None or short_price <= 0:
         logger.error(f"Cannot place short order: invalid price for {ticker_short}")
@@ -106,15 +208,30 @@ def place_pair_trade(ticker_long, ticker_short, notional=50):
     qty = max(1, int(notional / short_price))
     logger.info(f"Calculated short qty for {ticker_short}: {qty} shares")
 
-    short_req = MarketOrderRequest(
+    short_req = build_order_request(
         symbol=ticker_short,
-        qty=int(qty),
         side=OrderSide.SELL,
-        time_in_force=TimeInForce.DAY,
+        qty=qty,
+        price=short_price
     )
     success_short = place_order(short_req)
 
     if success_short:
+        trades_opened_total.inc()
         logger.info("Pair trade executed successfully.")
+        send_discord_message(
+            f"🚀 Executed pair trade: LONG {ticker_long}, SHORT {ticker_short}, Notional: {notional}"
+        )
     else:
         logger.error("Short leg order failed. Pair trade incomplete.")
+
+
+# === Prometheus Exporter ===
+if __name__ == "__main__":
+    try:
+        start_http_server(8000)
+        logger.info("[Metrics] Prometheus metrics server running at http://localhost:8000/metrics")
+        while True:
+            time.sleep(60)
+    except Exception as e:
+        logger.error(f"[Metrics] Failed to start Prometheus server: {e}")
