@@ -1,0 +1,14 @@
+artifact_uri: file:///Users/ianhayes/pairsplus-bot/mlruns/0/afb9304a92274b658189ef9a5dd2e66f/artifacts
+end_time: 1752347037898
+entry_point_name: ''
+experiment_id: '0'
+lifecycle_stage: active
+run_id: afb9304a92274b658189ef9a5dd2e66f
+run_name: orderly-hawk-692
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1752347037891
+status: 3
+tags: []
+user_id: ianhayes

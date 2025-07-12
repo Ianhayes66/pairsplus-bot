@@ -1,0 +1,14 @@
+artifact_uri: file:///Users/ianhayes/pairsplus-bot/mlruns/0/741cb15a4b9e4571a3df67954aac0ddd/artifacts
+end_time: 1752347101000
+entry_point_name: ''
+experiment_id: '0'
+lifecycle_stage: active
+run_id: 741cb15a4b9e4571a3df67954aac0ddd
+run_name: melodic-shrike-734
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1752347100992
+status: 3
+tags: []
+user_id: ianhayes

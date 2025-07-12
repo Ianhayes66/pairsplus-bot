@@ -1,0 +1,14 @@
+artifact_uri: file:///Users/ianhayes/pairsplus-bot/mlruns/0/a744c4ee4f0b4e25b73c0bc0d4bd4f2b/artifacts
+end_time: 1752347085865
+entry_point_name: ''
+experiment_id: '0'
+lifecycle_stage: active
+run_id: a744c4ee4f0b4e25b73c0bc0d4bd4f2b
+run_name: gifted-ray-188
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1752347085859
+status: 3
+tags: []
+user_id: ianhayes

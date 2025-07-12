@@ -1,0 +1,14 @@
+artifact_uri: file:///Users/ianhayes/pairsplus-bot/mlruns/0/8260b542efad4a6e9c62325b4ac1ab4c/artifacts
+end_time: 1752347092419
+entry_point_name: ''
+experiment_id: '0'
+lifecycle_stage: active
+run_id: 8260b542efad4a6e9c62325b4ac1ab4c
+run_name: colorful-robin-40
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1752347092412
+status: 3
+tags: []
+user_id: ianhayes

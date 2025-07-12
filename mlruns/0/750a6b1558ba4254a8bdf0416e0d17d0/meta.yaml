@@ -1,0 +1,14 @@
+artifact_uri: file:///Users/ianhayes/pairsplus-bot/mlruns/0/750a6b1558ba4254a8bdf0416e0d17d0/artifacts
+end_time: 1752347056691
+entry_point_name: ''
+experiment_id: '0'
+lifecycle_stage: active
+run_id: 750a6b1558ba4254a8bdf0416e0d17d0
+run_name: invincible-mole-613
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1752347056685
+status: 3
+tags: []
+user_id: ianhayes

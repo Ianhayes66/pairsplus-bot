@@ -1,0 +1,14 @@
+artifact_uri: file:///Users/ianhayes/pairsplus-bot/mlruns/0/4b8721a0412f418cbb67dcd912651db1/artifacts
+end_time: 1752347045607
+entry_point_name: ''
+experiment_id: '0'
+lifecycle_stage: active
+run_id: 4b8721a0412f418cbb67dcd912651db1
+run_name: stately-bear-126
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1752347045600
+status: 3
+tags: []
+user_id: ianhayes

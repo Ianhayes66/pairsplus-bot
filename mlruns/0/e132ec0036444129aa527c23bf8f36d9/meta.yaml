@@ -1,0 +1,14 @@
+artifact_uri: file:///Users/ianhayes/pairsplus-bot/mlruns/0/e132ec0036444129aa527c23bf8f36d9/artifacts
+end_time: 1752346890434
+entry_point_name: ''
+experiment_id: '0'
+lifecycle_stage: active
+run_id: e132ec0036444129aa527c23bf8f36d9
+run_name: funny-cub-343
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1752346890428
+status: 3
+tags: []
+user_id: ianhayes

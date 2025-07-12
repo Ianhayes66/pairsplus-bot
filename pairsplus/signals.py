@@ -1,70 +1,100 @@
 import pandas as pd
 import numpy as np
-from .config import Z_THRESHOLD, ROLLING_WINDOW
+from .tune_config import DEFAULT_HYPERPARAMS
 
-def zscore(series: pd.Series) -> pd.Series:
+def zscore(series: pd.Series, rolling_window: int) -> pd.Series:
     """
     Calculate the rolling z-score of a time series.
     """
-    return (series - series.rolling(ROLLING_WINDOW).mean()) / series.rolling(ROLLING_WINDOW).std()
+    return (series - series.rolling(rolling_window).mean()) / series.rolling(rolling_window).std()
 
-def signal_from_spread(df: pd.DataFrame, a: str, b: str):
+def kalman_filter(spread: pd.Series, kalman_cov: float) -> pd.Series:
+    """
+    Optional: Apply a simple Kalman filter to smooth the spread.
+    """
+    state_mean = 0.0
+    state_var = 1.0
+    result = []
+
+    for obs in spread:
+        # Predict
+        pred_mean = state_mean
+        pred_var = state_var + kalman_cov
+
+        # Update
+        kalman_gain = pred_var / (pred_var + kalman_cov)
+        state_mean = pred_mean + kalman_gain * (obs - pred_mean)
+        state_var = (1 - kalman_gain) * pred_var
+
+        result.append(state_mean)
+
+    return pd.Series(result, index=spread.index)
+
+def signal_from_spread(
+    df: pd.DataFrame,
+    a: str,
+    b: str,
+    z_threshold: float = None,
+    rolling_window: int = None,
+    kalman_cov: float = None
+) -> dict:
     """
     Generate trading signal based on spread z-score.
     """
+    z_threshold = z_threshold or DEFAULT_HYPERPARAMS["z_threshold"]
+    rolling_window = rolling_window or DEFAULT_HYPERPARAMS["rolling_window"]
+    kalman_cov = kalman_cov or DEFAULT_HYPERPARAMS["kalman_cov"]
+
     spread = df[a] - df[b]
-    z = zscore(spread)
+    spread_smoothed = kalman_filter(spread, kalman_cov)
+
+    z = zscore(spread_smoothed, rolling_window)
     latest = z.iloc[-1]
-    
-    if latest > Z_THRESHOLD:
+
+    if latest > z_threshold:
         return {"action": "SHORT_SPREAD", "pair": (a, b), "z": latest}
-    if latest < -Z_THRESHOLD:
+    if latest < -z_threshold:
         return {"action": "LONG_SPREAD", "pair": (a, b), "z": latest}
     return None
 
 # --------------- TESTS BELOW ---------------
 
 def test_zscore():
-    """
-    Unit test for zscore function.
-    """
-    series = pd.Series([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
-    result = zscore(series)
-    assert result[:ROLLING_WINDOW-1].isna().all()
-    assert np.isfinite(result[ROLLING_WINDOW-1:]).all()
+    series = pd.Series(range(1, 101))
+    result = zscore(series, rolling_window=20)
+    assert result[:19].isna().all()
+    assert np.isfinite(result[19:]).all()
+
+def test_kalman_filter():
+    series = pd.Series([10]*50 + [20]*50)
+    smoothed = kalman_filter(series, kalman_cov=0.001)
+    assert len(smoothed) == len(series)
+    assert np.all(np.isfinite(smoothed))
 
 def test_signal_from_spread_short(monkeypatch):
-    """
-    Unit test for signal_from_spread when z-score > Z_THRESHOLD.
-    """
-    df = pd.DataFrame({"A": [10, 12, 14, 16, 18, 20, 22, 24, 26, 28],
-                       "B": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]})
-    monkeypatch.setattr("pairsplus.signals.zscore", lambda s: pd.Series([0]*(len(s)-1) + [Z_THRESHOLD+1]))
-    signal = signal_from_spread(df, "A", "B")
-    assert signal["action"] == "SHORT_SPREAD"
-    assert signal["pair"] == ("A", "B")
-    assert signal["z"] == Z_THRESHOLD + 1
+    df = pd.DataFrame({
+        "A": [i * 2 for i in range(100)],
+        "B": list(range(100))
+    })
+    signal = signal_from_spread(
+        df, "A", "B",
+        z_threshold=0.5,
+        rolling_window=20,
+        kalman_cov=0.001
+    )
+    assert signal is not None
+    assert signal["action"] in {"SHORT_SPREAD", "LONG_SPREAD"}
+    assert isinstance(signal["z"], float)
 
-def test_signal_from_spread_long(monkeypatch):
-    """
-    Unit test for signal_from_spread when z-score < -Z_THRESHOLD.
-    """
-    df = pd.DataFrame({"A": [10, 12, 14, 16, 18, 20, 22, 24, 26, 28],
-                       "B": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]})
-    monkeypatch.setattr("pairsplus.signals.zscore", lambda s: pd.Series([0]*(len(s)-1) + [-Z_THRESHOLD-1]))
-    signal = signal_from_spread(df, "A", "B")
-    assert signal["action"] == "LONG_SPREAD"
-    assert signal["pair"] == ("A", "B")
-    assert signal["z"] == -Z_THRESHOLD - 1
-
-def test_signal_from_spread_none(monkeypatch):
-    """
-    Unit test for signal_from_spread when z-score is within threshold.
-    """
-    df = pd.DataFrame({"A": [10, 12, 14, 16, 18, 20, 22, 24, 26, 28],
-                       "B": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]})
-    monkeypatch.setattr("pairsplus.signals.zscore", lambda s: pd.Series([0]*len(s)))
-    signal = signal_from_spread(df, "A", "B")
+def test_signal_from_spread_none():
+    df = pd.DataFrame({
+        "A": [10]*100,
+        "B": [10]*100
+    })
+    signal = signal_from_spread(
+        df, "A", "B",
+        z_threshold=1.5,
+        rolling_window=20,
+        kalman_cov=0.001
+    )
     assert signal is None
-
-

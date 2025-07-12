@@ -1,0 +1,14 @@
+artifact_uri: file:///Users/ianhayes/pairsplus-bot/mlruns/0/5f528150d4a343afa5d9cf74e9ca265b/artifacts
+end_time: 1752346867906
+entry_point_name: ''
+experiment_id: '0'
+lifecycle_stage: active
+run_id: 5f528150d4a343afa5d9cf74e9ca265b
+run_name: painted-mole-994
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1752346867899
+status: 3
+tags: []
+user_id: ianhayes

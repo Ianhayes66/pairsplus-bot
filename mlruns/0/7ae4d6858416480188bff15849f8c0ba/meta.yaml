@@ -1,0 +1,14 @@
+artifact_uri: file:///Users/ianhayes/pairsplus-bot/mlruns/0/7ae4d6858416480188bff15849f8c0ba/artifacts
+end_time: 1752346877390
+entry_point_name: ''
+experiment_id: '0'
+lifecycle_stage: active
+run_id: 7ae4d6858416480188bff15849f8c0ba
+run_name: redolent-snake-950
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1752346877384
+status: 3
+tags: []
+user_id: ianhayes

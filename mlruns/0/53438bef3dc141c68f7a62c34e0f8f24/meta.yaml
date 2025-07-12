@@ -1,0 +1,14 @@
+artifact_uri: file:///Users/ianhayes/pairsplus-bot/mlruns/0/53438bef3dc141c68f7a62c34e0f8f24/artifacts
+end_time: 1752347060147
+entry_point_name: ''
+experiment_id: '0'
+lifecycle_stage: active
+run_id: 53438bef3dc141c68f7a62c34e0f8f24
+run_name: suave-eel-470
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1752347060141
+status: 3
+tags: []
+user_id: ianhayes

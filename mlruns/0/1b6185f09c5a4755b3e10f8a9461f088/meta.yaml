@@ -1,0 +1,14 @@
+artifact_uri: file:///Users/ianhayes/pairsplus-bot/mlruns/0/1b6185f09c5a4755b3e10f8a9461f088/artifacts
+end_time: 1752346868906
+entry_point_name: ''
+experiment_id: '0'
+lifecycle_stage: active
+run_id: 1b6185f09c5a4755b3e10f8a9461f088
+run_name: puzzled-croc-406
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1752346868900
+status: 3
+tags: []
+user_id: ianhayes

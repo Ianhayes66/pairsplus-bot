@@ -1,0 +1,14 @@
+artifact_uri: file:///Users/ianhayes/pairsplus-bot/mlruns/0/0a7d153a391e4e4f990e4769be4f5bb0/artifacts
+end_time: 1752346860119
+entry_point_name: ''
+experiment_id: '0'
+lifecycle_stage: active
+run_id: 0a7d153a391e4e4f990e4769be4f5bb0
+run_name: vaunted-kite-843
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1752346860112
+status: 3
+tags: []
+user_id: ianhayes

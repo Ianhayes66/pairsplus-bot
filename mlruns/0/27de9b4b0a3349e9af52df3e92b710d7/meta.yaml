@@ -1,0 +1,14 @@
+artifact_uri: file:///Users/ianhayes/pairsplus-bot/mlruns/0/27de9b4b0a3349e9af52df3e92b710d7/artifacts
+end_time: 1752346867153
+entry_point_name: ''
+experiment_id: '0'
+lifecycle_stage: active
+run_id: 27de9b4b0a3349e9af52df3e92b710d7
+run_name: unequaled-ram-696
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1752346867146
+status: 3
+tags: []
+user_id: ianhayes

@@ -1,0 +1,14 @@
+artifact_uri: file:///Users/ianhayes/pairsplus-bot/mlruns/0/e2923ade91374a61b1f19d46a650070d/artifacts
+end_time: 1752347048640
+entry_point_name: ''
+experiment_id: '0'
+lifecycle_stage: active
+run_id: e2923ade91374a61b1f19d46a650070d
+run_name: delicate-stag-830
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1752347048633
+status: 3
+tags: []
+user_id: ianhayes

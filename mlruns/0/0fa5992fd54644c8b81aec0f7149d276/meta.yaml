@@ -1,0 +1,14 @@
+artifact_uri: file:///Users/ianhayes/pairsplus-bot/mlruns/0/0fa5992fd54644c8b81aec0f7149d276/artifacts
+end_time: 1752347040877
+entry_point_name: ''
+experiment_id: '0'
+lifecycle_stage: active
+run_id: 0fa5992fd54644c8b81aec0f7149d276
+run_name: delicate-bass-759
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1752347040870
+status: 3
+tags: []
+user_id: ianhayes

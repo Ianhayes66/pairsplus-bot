@@ -1,0 +1,14 @@
+artifact_uri: file:///Users/ianhayes/pairsplus-bot/mlruns/0/6ae7add0716b46e594358f3263a5ebd2/artifacts
+end_time: 1752346863492
+entry_point_name: ''
+experiment_id: '0'
+lifecycle_stage: active
+run_id: 6ae7add0716b46e594358f3263a5ebd2
+run_name: overjoyed-calf-197
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1752346863486
+status: 3
+tags: []
+user_id: ianhayes

@@ -1,0 +1,14 @@
+artifact_uri: file:///Users/ianhayes/pairsplus-bot/mlruns/0/22f0b371a9094dc692f03c87d5c702b3/artifacts
+end_time: 1752347079684
+entry_point_name: ''
+experiment_id: '0'
+lifecycle_stage: active
+run_id: 22f0b371a9094dc692f03c87d5c702b3
+run_name: legendary-mule-240
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1752347079676
+status: 3
+tags: []
+user_id: ianhayes

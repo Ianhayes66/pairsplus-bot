@@ -1,0 +1,14 @@
+artifact_uri: file:///Users/ianhayes/pairsplus-bot/mlruns/0/f228bbfa857e42569df89423aa500c91/artifacts
+end_time: 1752347051541
+entry_point_name: ''
+experiment_id: '0'
+lifecycle_stage: active
+run_id: f228bbfa857e42569df89423aa500c91
+run_name: judicious-flea-29
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1752347051534
+status: 3
+tags: []
+user_id: ianhayes

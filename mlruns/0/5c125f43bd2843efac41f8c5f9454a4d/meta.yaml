@@ -1,0 +1,14 @@
+artifact_uri: file:///Users/ianhayes/pairsplus-bot/mlruns/0/5c125f43bd2843efac41f8c5f9454a4d/artifacts
+end_time: 1752346892529
+entry_point_name: ''
+experiment_id: '0'
+lifecycle_stage: active
+run_id: 5c125f43bd2843efac41f8c5f9454a4d
+run_name: amusing-crab-49
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1752346892522
+status: 3
+tags: []
+user_id: ianhayes

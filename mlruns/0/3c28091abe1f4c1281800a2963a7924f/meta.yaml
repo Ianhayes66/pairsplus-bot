@@ -1,0 +1,14 @@
+artifact_uri: file:///Users/ianhayes/pairsplus-bot/mlruns/0/3c28091abe1f4c1281800a2963a7924f/artifacts
+end_time: 1752346889607
+entry_point_name: ''
+experiment_id: '0'
+lifecycle_stage: active
+run_id: 3c28091abe1f4c1281800a2963a7924f
+run_name: suave-bug-157
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1752346889601
+status: 3
+tags: []
+user_id: ianhayes

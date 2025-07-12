@@ -1,0 +1,14 @@
+artifact_uri: file:///Users/ianhayes/pairsplus-bot/mlruns/0/3b25f4f7cdfe49b9a3084612ffe6acf1/artifacts
+end_time: 1752346876636
+entry_point_name: ''
+experiment_id: '0'
+lifecycle_stage: active
+run_id: 3b25f4f7cdfe49b9a3084612ffe6acf1
+run_name: bouncy-skunk-59
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1752346876629
+status: 3
+tags: []
+user_id: ianhayes

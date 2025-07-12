@@ -1,0 +1,14 @@
+artifact_uri: file:///Users/ianhayes/pairsplus-bot/mlruns/0/678b59030d264569a21c3056d179bf9f/artifacts
+end_time: 1752346884635
+entry_point_name: ''
+experiment_id: '0'
+lifecycle_stage: active
+run_id: 678b59030d264569a21c3056d179bf9f
+run_name: melodic-mule-301
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1752346884629
+status: 3
+tags: []
+user_id: ianhayes

@@ -1,0 +1,14 @@
+artifact_uri: file:///Users/ianhayes/pairsplus-bot/mlruns/0/535369e1dee949658dee3917a0ac8217/artifacts
+end_time: 1752347047611
+entry_point_name: ''
+experiment_id: '0'
+lifecycle_stage: active
+run_id: 535369e1dee949658dee3917a0ac8217
+run_name: carefree-conch-477
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1752347047604
+status: 3
+tags: []
+user_id: ianhayes

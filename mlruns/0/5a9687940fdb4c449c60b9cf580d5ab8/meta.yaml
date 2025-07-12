@@ -1,0 +1,14 @@
+artifact_uri: file:///Users/ianhayes/pairsplus-bot/mlruns/0/5a9687940fdb4c449c60b9cf580d5ab8/artifacts
+end_time: 1752346883065
+entry_point_name: ''
+experiment_id: '0'
+lifecycle_stage: active
+run_id: 5a9687940fdb4c449c60b9cf580d5ab8
+run_name: traveling-wasp-84
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1752346883059
+status: 3
+tags: []
+user_id: ianhayes

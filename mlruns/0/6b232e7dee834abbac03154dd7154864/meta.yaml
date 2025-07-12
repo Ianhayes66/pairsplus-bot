@@ -1,0 +1,14 @@
+artifact_uri: file:///Users/ianhayes/pairsplus-bot/mlruns/0/6b232e7dee834abbac03154dd7154864/artifacts
+end_time: 1752347067990
+entry_point_name: ''
+experiment_id: '0'
+lifecycle_stage: active
+run_id: 6b232e7dee834abbac03154dd7154864
+run_name: auspicious-goat-435
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1752347067984
+status: 3
+tags: []
+user_id: ianhayes

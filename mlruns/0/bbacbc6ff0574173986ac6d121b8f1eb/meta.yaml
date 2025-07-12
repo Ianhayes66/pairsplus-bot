@@ -1,0 +1,14 @@
+artifact_uri: file:///Users/ianhayes/pairsplus-bot/mlruns/0/bbacbc6ff0574173986ac6d121b8f1eb/artifacts
+end_time: 1752347039290
+entry_point_name: ''
+experiment_id: '0'
+lifecycle_stage: active
+run_id: bbacbc6ff0574173986ac6d121b8f1eb
+run_name: lyrical-smelt-224
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1752347039283
+status: 3
+tags: []
+user_id: ianhayes

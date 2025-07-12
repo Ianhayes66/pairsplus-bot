@@ -1,0 +1,14 @@
+artifact_uri: file:///Users/ianhayes/pairsplus-bot/mlruns/0/10c4c4b05efd479c8cf9e347f2afedf4/artifacts
+end_time: 1752347088990
+entry_point_name: ''
+experiment_id: '0'
+lifecycle_stage: active
+run_id: 10c4c4b05efd479c8cf9e347f2afedf4
+run_name: wise-grouse-931
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1752347088983
+status: 3
+tags: []
+user_id: ianhayes

@@ -1,0 +1,14 @@
+artifact_uri: file:///Users/ianhayes/pairsplus-bot/mlruns/0/71ff0dfb28bd4f7faa91d6c911c5828b/artifacts
+end_time: 1752346871554
+entry_point_name: ''
+experiment_id: '0'
+lifecycle_stage: active
+run_id: 71ff0dfb28bd4f7faa91d6c911c5828b
+run_name: capable-mink-353
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1752346871547
+status: 3
+tags: []
+user_id: ianhayes

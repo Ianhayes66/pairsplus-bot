@@ -1,0 +1,14 @@
+artifact_uri: file:///Users/ianhayes/pairsplus-bot/mlruns/0/7560213a30024db8aa5e0d8ed508880d/artifacts
+end_time: 1752346878934
+entry_point_name: ''
+experiment_id: '0'
+lifecycle_stage: active
+run_id: 7560213a30024db8aa5e0d8ed508880d
+run_name: sassy-bass-92
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1752346878927
+status: 3
+tags: []
+user_id: ianhayes

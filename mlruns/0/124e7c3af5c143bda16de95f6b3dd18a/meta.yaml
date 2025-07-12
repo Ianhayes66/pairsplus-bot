@@ -1,0 +1,14 @@
+artifact_uri: file:///Users/ianhayes/pairsplus-bot/mlruns/0/124e7c3af5c143bda16de95f6b3dd18a/artifacts
+end_time: 1752346852298
+entry_point_name: ''
+experiment_id: '0'
+lifecycle_stage: active
+run_id: 124e7c3af5c143bda16de95f6b3dd18a
+run_name: gaudy-pug-454
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1752346852292
+status: 3
+tags: []
+user_id: ianhayes

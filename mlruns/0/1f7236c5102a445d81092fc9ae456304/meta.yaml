@@ -1,0 +1,14 @@
+artifact_uri: file:///Users/ianhayes/pairsplus-bot/mlruns/0/1f7236c5102a445d81092fc9ae456304/artifacts
+end_time: 1752346853559
+entry_point_name: ''
+experiment_id: '0'
+lifecycle_stage: active
+run_id: 1f7236c5102a445d81092fc9ae456304
+run_name: gifted-jay-610
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1752346853553
+status: 3
+tags: []
+user_id: ianhayes

@@ -1,0 +1,14 @@
+artifact_uri: file:///Users/ianhayes/pairsplus-bot/mlruns/0/17e4eb1a7e724a65ae858a17233c07b5/artifacts
+end_time: 1752346887912
+entry_point_name: ''
+experiment_id: '0'
+lifecycle_stage: active
+run_id: 17e4eb1a7e724a65ae858a17233c07b5
+run_name: mysterious-rat-516
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1752346887906
+status: 3
+tags: []
+user_id: ianhayes

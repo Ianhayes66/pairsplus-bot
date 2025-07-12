@@ -1,0 +1,14 @@
+artifact_uri: file:///Users/ianhayes/pairsplus-bot/mlruns/0/c7bbdae30c73483c84ec2c929a6c73e6/artifacts
+end_time: 1752346859349
+entry_point_name: ''
+experiment_id: '0'
+lifecycle_stage: active
+run_id: c7bbdae30c73483c84ec2c929a6c73e6
+run_name: hilarious-gnu-791
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1752346859343
+status: 3
+tags: []
+user_id: ianhayes
