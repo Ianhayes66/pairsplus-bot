@@ -1,13 +1,17 @@
+#!/usr/bin/env python
+
+import argparse
 import json
 from pathlib import Path
 import optuna
 import mlflow
 from pairsplus.backtest import run_backtest
 
-mlflow.set_experiment("PairsPlus-Hyperparameter-Tuning")
+MLFLOW_EXPERIMENT = "PairsPlus-Hyperparameter-Tuning"
+BEST_PARAMS_FILE = Path("best_hyperparams.json")
 
 
-def objective(trial):
+def objective(trial, enable_mlflow=True):
     params = {
         "z_threshold": trial.suggest_float("z_threshold", 0.5, 3.0),
         "lookback_days": trial.suggest_int("lookback_days", 30, 365),
@@ -17,36 +21,64 @@ def objective(trial):
 
     score = run_backtest(**params)
 
-    with mlflow.start_run():
-        mlflow.log_params(params)
-        mlflow.log_metric("score", score)
+    if enable_mlflow:
+        with mlflow.start_run():
+            mlflow.log_params(params)
+            mlflow.log_metric("score", score)
 
     return score
 
 
-if __name__ == "__main__":
+def main():
+    parser = argparse.ArgumentParser(
+        description="Hyperparameter tuning for PairsPlus."
+    )
+    parser.add_argument(
+        "--trials",
+        type=int,
+        default=50,
+        help="Number of Optuna trials to run (default: 50)"
+    )
+    parser.add_argument(
+        "--no-mlflow",
+        action="store_true",
+        help="Disable MLflow logging"
+    )
+    args = parser.parse_args()
+
+    enable_mlflow = not args.no_mlflow
+
+    if enable_mlflow:
+        mlflow.set_experiment(MLFLOW_EXPERIMENT)
+
+    print(f"\n🚀 Starting hyperparameter tuning with {args.trials} trials...\n")
     study = optuna.create_study(direction="maximize")
-    study.optimize(objective, n_trials=50)
+    study.optimize(lambda trial: objective(trial, enable_mlflow), n_trials=args.trials)
 
     best_trial = study.best_trial
 
-    print("\n" + "=" * 40)
+    print("\n" + "=" * 50)
     print("✅ BEST TRIAL RESULTS")
-    print("=" * 40)
+    print("=" * 50)
     print(f"⭐ Best Score: {best_trial.value:.2f}")
     print("🔎 Best Hyperparameters:")
     for k, v in best_trial.params.items():
         print(f"   - {k}: {v}")
-    print("=" * 40 + "\n")
+    print("=" * 50 + "\n")
 
-    # Log best trial to MLflow
-    with mlflow.start_run(run_name="best_trial"):
-        mlflow.log_params(best_trial.params)
-        mlflow.log_metric("score", best_trial.value)
-
-    # Save best hyperparameters to JSON file
-    best_params_path = Path("best_hyperparams.json")
-    with open(best_params_path, "w") as f:
+    # Save best hyperparameters to JSON
+    with open(BEST_PARAMS_FILE, "w") as f:
         json.dump(best_trial.params, f, indent=2)
 
-    print(f"\n✅ Best hyperparameters saved to {best_params_path.resolve()}\n")
+    print(f"✅ Best hyperparameters saved to: {BEST_PARAMS_FILE.resolve()}")
+
+    # Log best trial separately to MLflow
+    if enable_mlflow:
+        with mlflow.start_run(run_name="best_trial"):
+            mlflow.log_params(best_trial.params)
+            mlflow.log_metric("score", best_trial.value)
+        print("✅ Best trial also logged to MLflow.")
+
+
+if __name__ == "__main__":
+    main()

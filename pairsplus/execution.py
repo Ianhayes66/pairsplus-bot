@@ -2,11 +2,11 @@
 pairsplus/execution.py
 
 Handles trade execution via Alpaca TradingClient.
-Supports:
-- Limit order pegging
-- Notional splitting
+Features:
+- Limit order pegging with rounding
+- Notional splitting for liquidity
 - CSV trade logging
-- File + console logging
+- Console and file logging
 - Discord notifications
 - Prometheus metrics
 """
@@ -60,15 +60,19 @@ equity_value = Gauge('equity_value', 'Simulated equity curve')
 client = TradingClient(ALPACA_KEY, ALPACA_SECRET, paper=True)
 data_client = StockHistoricalDataClient(ALPACA_KEY, ALPACA_SECRET)
 
+
 # === Helper: Fetch Latest Price ===
 def get_latest_price(symbol):
+    """
+    Fetch the latest trade price for a stock.
+    """
     try:
         trades = data_client.get_stock_latest_trade(
             StockLatestTradeRequest(symbol_or_symbols=symbol)
         )
         price = trades[symbol].price
         if price is None or price <= 0:
-            raise ValueError(f"Invalid price fetched for {symbol}: {price}")
+            raise ValueError(f"Invalid fetched price for {symbol}: {price}")
         logger.info(f"Latest price for {symbol}: {price}")
         return price
     except Exception as e:
@@ -76,8 +80,12 @@ def get_latest_price(symbol):
         trade_errors_total.inc()
         return None
 
+
 # === Helper: CSV Trade Log ===
 def log_trade_csv(action, ticker, qty, price=None):
+    """
+    Append a trade entry to CSV log.
+    """
     row = {
         "timestamp": datetime.utcnow().isoformat(),
         "action": action,
@@ -95,8 +103,12 @@ def log_trade_csv(action, ticker, qty, price=None):
         writer.writerow(row)
     logger.info(f"Logged trade to CSV: {row}")
 
+
 # === Helper: Place Order ===
 def place_order(req):
+    """
+    Submit an order to Alpaca with retries.
+    """
     orders_attempted_total.inc()
     for attempt in range(3):
         try:
@@ -117,14 +129,18 @@ def place_order(req):
             logger.warning(f"Order failed (attempt {attempt + 1}): {str(e)}")
             trade_errors_total.inc()
             time.sleep(2)
-    logger.error("Order failed after 3 attempts.")
+    logger.error("❌ Order failed after 3 attempts.")
     return False
+
 
 # === Helper: Build Market or Limit Order ===
 def build_order_request(symbol, side, qty=None, notional=None, price=None):
+    """
+    Build Market or Limit order request.
+    """
     if qty is None and notional is None:
         raise ValueError(f"[Execution] ERROR: Both qty and notional are None for {symbol}.")
-    if qty is not None and (qty <= 0):
+    if qty is not None and qty <= 0:
         raise ValueError(f"[Execution] ERROR: Invalid qty for {symbol}: {qty}")
 
     if ORDER_TYPE == "LIMIT":
@@ -134,6 +150,7 @@ def build_order_request(symbol, side, qty=None, notional=None, price=None):
             qty = max(1, int(notional / price))
             logger.info(f"Calculated qty for LIMIT order on {symbol}: {qty} shares from notional {notional}")
 
+        # Round limit price to 2 decimals (avoiding sub-penny errors)
         peg_factor = 1 + (PEG_DISTANCE if side == OrderSide.BUY else -PEG_DISTANCE)
         limit_price = round(price * peg_factor, 2)
         logger.info(f"Pegging {side.name} order for {symbol} at limit {limit_price} (peg distance {PEG_DISTANCE})")
@@ -153,8 +170,12 @@ def build_order_request(symbol, side, qty=None, notional=None, price=None):
             time_in_force=TimeInForce.DAY,
         )
 
+
 # === Helper: Split Notional if Configured ===
 def maybe_split_notional(notional):
+    """
+    Split notional into halves if enabled.
+    """
     if SPLIT_NOTIONAL and notional > 20:
         half = notional / 2
         logger.info(f"Smart notional split: {notional} -> {half} + {half}")
@@ -162,8 +183,12 @@ def maybe_split_notional(notional):
     else:
         return [notional]
 
+
 # === Close Existing Pair ===
 def close_pair_trade(ticker_long, ticker_short, qty=1):
+    """
+    Close both legs of an existing pair.
+    """
     logger.info(f"Closing pair trade: SELL {ticker_long}, BUY {ticker_short}")
 
     price_long = get_latest_price(ticker_long)
@@ -190,8 +215,12 @@ def close_pair_trade(ticker_long, ticker_short, qty=1):
         trades_closed_total.inc()
         send_discord_message(f"📉 Closed pair trade: SELL {ticker_long}, BUY {ticker_short}")
 
+
 # === Place New Pair Trade ===
 def place_pair_trade(ticker_long, ticker_short, notional=50):
+    """
+    Place new pair trade with notional split and pegged limit pricing.
+    """
     logger.info(f"Placing pair trade: LONG {ticker_long}, SHORT {ticker_short}, Notional: {notional}")
 
     # --- Long leg ---
@@ -231,12 +260,13 @@ def place_pair_trade(ticker_long, ticker_short, notional=50):
 
     if success_short:
         trades_opened_total.inc()
-        logger.info("Pair trade executed successfully.")
+        logger.info("✅ Pair trade executed successfully.")
         send_discord_message(
             f"🚀 Executed pair trade: LONG {ticker_long}, SHORT {ticker_short}, Notional: {notional}"
         )
     else:
         logger.error("[Execution] ERROR: Short leg order failed. Pair trade incomplete.")
+
 
 # === Prometheus Exporter ===
 if __name__ == "__main__":

@@ -1,8 +1,9 @@
 """
 pairsplus/trade_live.py
 
-Advanced trading loop with position management, logging, Alpaca integration,
-Discord notifications, and Prometheus metrics server.
+Advanced trading loop with position management,
+Alpaca integration, Discord notifications, and
+Prometheus metrics server.
 """
 
 import asyncio
@@ -16,22 +17,33 @@ from pairsplus.notifier import send_discord_message
 from prometheus_client import start_http_server, Counter
 from pairsplus.hyperparams import load_best_hyperparameters
 
-# ------------- Metrics ------------------
+# ----------------- SSL / Certificates -----------------
+import ssl
+import certifi
+
+try:
+    ssl_context = ssl.create_default_context(cafile=certifi.where())
+    ssl._create_default_https_context = ssl.create_default_context
+except Exception as e:
+    print(f"[SSL Warning] Could not set certifi SSL context: {e}")
+    send_discord_message("⚠️ SSL certificates might not be verified correctly.")
+
+# ----------------- Prometheus Metrics -----------------
 TRADES_PROCESSED = Counter("trades_processed_total", "Number of trade logic cycles run")
 ENTRIES_TOTAL = Counter("trade_entries_total", "Total number of new trades entered")
 EXITS_TOTAL = Counter("trade_exits_total", "Total number of trades exited")
 
-# Start Prometheus metrics server on configurable port
+# ----------------- Metrics Server ---------------------
 METRICS_PORT = int(os.getenv("METRICS_PORT", "8000"))
 try:
     start_http_server(METRICS_PORT)
-    print(f"[Metrics] Prometheus metrics available at http://localhost:{METRICS_PORT}/metrics")
-    send_discord_message(f"📈 Metrics server running on port {METRICS_PORT}")
+    print(f"[Metrics] Prometheus available at http://localhost:{METRICS_PORT}/metrics")
+    send_discord_message(f"✅ Metrics server running on port {METRICS_PORT}")
 except Exception as e:
-    print(f"[Metrics] Failed to start metrics server: {e}")
+    print(f"[Metrics] Error starting server: {e}")
     send_discord_message(f"❌ Metrics server error: {e}")
 
-# --------- POSITION TRACKING ---------
+# ----------------- POSITION TRACKING ------------------
 POSITIONS_FILE = Path("positions.json")
 positions = {}
 
@@ -63,7 +75,7 @@ def close_trade(pair):
 def is_open(pair):
     return f"{pair[0]}_{pair[1]}" in positions or f"{pair[1]}_{pair[0]}" in positions
 
-# --------- LOGGING TRADES ----------
+# ----------------- TRADE LOGGING ---------------------
 TRADE_LOG = Path("trade_log.txt")
 
 def log_trade(event, pair, side, zscore=None):
@@ -74,7 +86,7 @@ def log_trade(event, pair, side, zscore=None):
         f.write(log_line)
     print(f"[Log] {log_line.strip()}")
 
-# ----------- Alpaca websocket version ------------
+# ----------------- Alpaca WebSocket -------------------
 try:
     from alpaca.data.live import StockDataStream
 except ImportError:
@@ -84,27 +96,35 @@ ALPACA_KEY = os.getenv("ALPACA_KEY")
 ALPACA_SECRET = os.getenv("ALPACA_SECRET")
 
 async def run_websocket_live():
+    """Run trading loop in WebSocket mode using Alpaca's data stream."""
     if not StockDataStream:
         raise ImportError("alpaca-py package is required for websocket mode.")
 
-    stream = StockDataStream(ALPACA_KEY, ALPACA_SECRET)
     from pairsplus.config import UNIVERSE
 
-    for symbol in UNIVERSE:
-        @stream.on_bar(symbol)
-        async def handle_bar(bar):
-            print(f"[Websocket] Received bar for {bar.symbol}")
-            await process_live_bar(bar.symbol)
+    stream = StockDataStream(ALPACA_KEY, ALPACA_SECRET)
 
-    print("[Websocket] Starting event loop.")
-    send_discord_message("🟢 Websocket trading mode started.")
-    await stream.run()
+    async def handle_bar(bar):
+        print(f"[WebSocket] New bar for {bar.symbol}")
+        await process_live_bar(bar.symbol)
+
+    try:
+        stream.subscribe_bars(handle_bar, *UNIVERSE)
+        print(f"[WebSocket] Subscribed to bars for: {UNIVERSE}")
+        send_discord_message(f"🟢 WebSocket trading mode started. Watching symbols: {UNIVERSE}")
+        await stream._run_forever()
+    except ssl.SSLError as ssl_err:
+        print(f"[WebSocket Error] SSL verification failed: {ssl_err}")
+        send_discord_message("❌ WebSocket SSL verification error. Check your certificates.")
+    except Exception as e:
+        print(f"[WebSocket Error] Unexpected error: {e}")
+        send_discord_message(f"❌ WebSocket error: {e}")
 
 async def process_live_bar(symbol):
-    print(f"[Websocket] Processing new bar for {symbol}")
+    print(f"[WebSocket] Processing new bar for {symbol}")
     run_trading_logic()
 
-# ---------- Core Trading Logic ----------
+# ----------------- Core Trading Logic -----------------
 def run_trading_logic():
     print("[Trading] Fetching bars and computing signals...")
     try:
@@ -124,8 +144,7 @@ def run_trading_logic():
     TRADES_PROCESSED.inc()
 
     for _, row in best_pairs.iterrows():
-        a = row["a"]
-        b = row["b"]
+        a, b = row["a"], row["b"]
         spread_df = df[[a, b]]
         sig = signals.signal_from_spread(
             spread_df, a, b,
@@ -144,26 +163,25 @@ def run_trading_logic():
                     open_trade(pair_key, "LONG_SPREAD")
                     log_trade("ENTRY", pair_key, "LONG_SPREAD", sig["z"])
                     ENTRIES_TOTAL.inc()
-                    send_discord_message(f"🚀 ENTRY: LONG_SPREAD {a} - {b} | Z-score: {sig['z']:.2f}")
+                    send_discord_message(f"🚀 ENTRY: LONG_SPREAD {a} - {b} | Z: {sig['z']:.2f}")
                 elif sig["action"] == "SHORT_SPREAD":
                     print(f"🚀 Opening SHORT_SPREAD: {b} - {a}")
                     execution.place_pair_trade(b, a)
                     open_trade(pair_key, "SHORT_SPREAD")
                     log_trade("ENTRY", pair_key, "SHORT_SPREAD", sig["z"])
                     ENTRIES_TOTAL.inc()
-                    send_discord_message(f"🚀 ENTRY: SHORT_SPREAD {b} - {a} | Z-score: {sig['z']:.2f}")
+                    send_discord_message(f"🚀 ENTRY: SHORT_SPREAD {b} - {a} | Z: {sig['z']:.2f}")
             else:
-                print(f"✅ Position already open for {pair_key}. Skipping duplicate entry.")
+                print(f"✅ Position already open for {pair_key}. Skipping entry.")
         else:
             if is_open(pair_key):
                 print(f"⚡ Spread mean-reverted. Exiting {pair_key}")
-                # execution.close_pair_trade() can be called here
                 close_trade(pair_key)
-                log_trade("EXIT", pair_key, "CLOSE", None)
+                log_trade("EXIT", pair_key, "CLOSE")
                 EXITS_TOTAL.inc()
                 send_discord_message(f"⚡ EXIT: Closed position for pair {pair_key}")
 
-# ------------- Old schedule-based polling ------------
+# ----------------- Polling Mode Loop -----------------
 def schedule_polling_loop():
     load_positions()
     send_discord_message("🟢 Polling trading mode started.")
@@ -180,10 +198,11 @@ def schedule_polling_loop():
         schedule.run_pending()
         time.sleep(30)
 
-# ------------- CLI entrypoint ------------
+# ----------------- CLI Entrypoint --------------------
 if __name__ == "__main__":
     mode = os.getenv("LIVE_MODE", "websocket").lower()
     send_discord_message(f"🤖 Bot starting in {mode.upper()} mode.")
+    load_positions()
     if mode == "polling":
         schedule_polling_loop()
     else:
