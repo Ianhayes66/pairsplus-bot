@@ -20,3 +20,6 @@ __pycache__/
 
 mlruns/
 best_hyperparams.json
+
+positions.json
+trade_log.txt
