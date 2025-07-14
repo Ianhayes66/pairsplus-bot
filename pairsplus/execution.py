@@ -60,7 +60,6 @@ equity_value = Gauge('equity_value', 'Simulated equity curve')
 client = TradingClient(ALPACA_KEY, ALPACA_SECRET, paper=True)
 data_client = StockHistoricalDataClient(ALPACA_KEY, ALPACA_SECRET)
 
-
 # === Helper: Fetch Latest Price ===
 def get_latest_price(symbol):
     try:
@@ -68,13 +67,14 @@ def get_latest_price(symbol):
             StockLatestTradeRequest(symbol_or_symbols=symbol)
         )
         price = trades[symbol].price
+        if price is None or price <= 0:
+            raise ValueError(f"Invalid price fetched for {symbol}: {price}")
         logger.info(f"Latest price for {symbol}: {price}")
         return price
     except Exception as e:
         logger.error(f"Failed to fetch latest price for {symbol}: {e}")
         trade_errors_total.inc()
         return None
-
 
 # === Helper: CSV Trade Log ===
 def log_trade_csv(action, ticker, qty, price=None):
@@ -95,7 +95,6 @@ def log_trade_csv(action, ticker, qty, price=None):
         writer.writerow(row)
     logger.info(f"Logged trade to CSV: {row}")
 
-
 # === Helper: Place Order ===
 def place_order(req):
     orders_attempted_total.inc()
@@ -109,7 +108,6 @@ def place_order(req):
                 qty=req.qty if hasattr(req, 'qty') else "fractional",
                 price="MARKET"
             )
-            # ✅ Notify
             send_discord_message(
                 f"✅ Order: {req.side.value.upper()} {req.symbol} "
                 f"Qty: {req.qty if hasattr(req, 'qty') else 'fractional'}"
@@ -122,13 +120,23 @@ def place_order(req):
     logger.error("Order failed after 3 attempts.")
     return False
 
-
 # === Helper: Build Market or Limit Order ===
 def build_order_request(symbol, side, qty=None, notional=None, price=None):
-    if ORDER_TYPE == "LIMIT" and price is not None:
+    if qty is None and notional is None:
+        raise ValueError(f"[Execution] ERROR: Both qty and notional are None for {symbol}.")
+    if qty is not None and (qty <= 0):
+        raise ValueError(f"[Execution] ERROR: Invalid qty for {symbol}: {qty}")
+
+    if ORDER_TYPE == "LIMIT":
+        if price is None or price <= 0:
+            raise ValueError(f"[Execution] ERROR: Missing or invalid price for LIMIT order on {symbol}")
+        if qty is None and notional is not None:
+            qty = max(1, int(notional / price))
+            logger.info(f"Calculated qty for LIMIT order on {symbol}: {qty} shares from notional {notional}")
+
         peg_factor = 1 + (PEG_DISTANCE if side == OrderSide.BUY else -PEG_DISTANCE)
-        limit_price = price * peg_factor
-        logger.info(f"Pegging {side.name} order for {symbol} at limit {limit_price:.2f} (peg distance {PEG_DISTANCE})")
+        limit_price = round(price * peg_factor, 2)
+        logger.info(f"Pegging {side.name} order for {symbol} at limit {limit_price} (peg distance {PEG_DISTANCE})")
         return LimitOrderRequest(
             symbol=symbol,
             qty=int(qty),
@@ -139,12 +147,11 @@ def build_order_request(symbol, side, qty=None, notional=None, price=None):
     else:
         return MarketOrderRequest(
             symbol=symbol,
-            qty=int(qty) if qty else None,
+            qty=int(qty) if qty is not None else None,
             notional=decimal.Decimal(notional) if notional else None,
             side=side,
             time_in_force=TimeInForce.DAY,
         )
-
 
 # === Helper: Split Notional if Configured ===
 def maybe_split_notional(notional):
@@ -155,13 +162,16 @@ def maybe_split_notional(notional):
     else:
         return [notional]
 
-
 # === Close Existing Pair ===
 def close_pair_trade(ticker_long, ticker_short, qty=1):
     logger.info(f"Closing pair trade: SELL {ticker_long}, BUY {ticker_short}")
 
     price_long = get_latest_price(ticker_long)
     price_short = get_latest_price(ticker_short)
+
+    if price_long is None or price_short is None:
+        logger.error("[Execution] ERROR: Cannot close trade due to missing price data.")
+        return
 
     sell_req = build_order_request(
         symbol=ticker_long,
@@ -180,7 +190,6 @@ def close_pair_trade(ticker_long, ticker_short, qty=1):
         trades_closed_total.inc()
         send_discord_message(f"📉 Closed pair trade: SELL {ticker_long}, BUY {ticker_short}")
 
-
 # === Place New Pair Trade ===
 def place_pair_trade(ticker_long, ticker_short, notional=50):
     logger.info(f"Placing pair trade: LONG {ticker_long}, SHORT {ticker_short}, Notional: {notional}")
@@ -188,6 +197,10 @@ def place_pair_trade(ticker_long, ticker_short, notional=50):
     # --- Long leg ---
     for chunk in maybe_split_notional(notional):
         long_price = get_latest_price(ticker_long)
+        if long_price is None or long_price <= 0:
+            logger.error(f"[Execution] ERROR: Cannot place long order: invalid price for {ticker_long}")
+            return
+
         long_req = build_order_request(
             symbol=ticker_long,
             side=OrderSide.BUY,
@@ -196,22 +209,22 @@ def place_pair_trade(ticker_long, ticker_short, notional=50):
         )
         success_long = place_order(long_req)
         if not success_long:
-            logger.error("Long leg order failed. Aborting pair trade.")
+            logger.error("[Execution] ERROR: Long leg order failed. Aborting pair trade.")
             return
 
     # --- Short leg ---
     short_price = get_latest_price(ticker_short)
     if short_price is None or short_price <= 0:
-        logger.error(f"Cannot place short order: invalid price for {ticker_short}")
+        logger.error(f"[Execution] ERROR: Cannot place short order: invalid price for {ticker_short}")
         return
 
-    qty = max(1, int(notional / short_price))
-    logger.info(f"Calculated short qty for {ticker_short}: {qty} shares")
+    qty_short = max(1, int(notional / short_price))
+    logger.info(f"Calculated short qty for {ticker_short}: {qty_short} shares")
 
     short_req = build_order_request(
         symbol=ticker_short,
         side=OrderSide.SELL,
-        qty=qty,
+        qty=qty_short,
         price=short_price
     )
     success_short = place_order(short_req)
@@ -223,8 +236,7 @@ def place_pair_trade(ticker_long, ticker_short, notional=50):
             f"🚀 Executed pair trade: LONG {ticker_long}, SHORT {ticker_short}, Notional: {notional}"
         )
     else:
-        logger.error("Short leg order failed. Pair trade incomplete.")
-
+        logger.error("[Execution] ERROR: Short leg order failed. Pair trade incomplete.")
 
 # === Prometheus Exporter ===
 if __name__ == "__main__":

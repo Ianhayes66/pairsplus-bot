@@ -14,6 +14,7 @@ from pathlib import Path
 from pairsplus import data_io, pairs, signals, execution
 from pairsplus.notifier import send_discord_message
 from prometheus_client import start_http_server, Counter
+from pairsplus.hyperparams import load_best_hyperparameters
 
 # ------------- Metrics ------------------
 TRADES_PROCESSED = Counter("trades_processed_total", "Number of trade logic cycles run")
@@ -107,7 +108,13 @@ async def process_live_bar(symbol):
 def run_trading_logic():
     print("[Trading] Fetching bars and computing signals...")
     try:
-        df = data_io.fetch_bars(interval="1h", lookback=90)
+        best_params = load_best_hyperparameters()
+        lookback_days = best_params.get("lookback_days", 90)
+        rolling_window = best_params.get("rolling_window", 60)
+        z_threshold = best_params.get("z_threshold", 1.5)
+        kalman_cov = best_params.get("kalman_cov", 0.005)
+
+        df = data_io.fetch_bars(interval="1h", lookback=lookback_days)
     except Exception as e:
         print(f"[Error] Failed to fetch bars: {e}")
         send_discord_message(f"❌ Error fetching bars: {e}")
@@ -120,7 +127,12 @@ def run_trading_logic():
         a = row["a"]
         b = row["b"]
         spread_df = df[[a, b]]
-        sig = signals.signal_from_spread(spread_df, a, b)
+        sig = signals.signal_from_spread(
+            spread_df, a, b,
+            z_threshold=z_threshold,
+            rolling_window=rolling_window,
+            kalman_cov=kalman_cov
+        )
 
         pair_key = (a, b)
 

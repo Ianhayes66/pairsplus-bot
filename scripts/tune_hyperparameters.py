@@ -1,6 +1,11 @@
+import json
+from pathlib import Path
 import optuna
 import mlflow
 from pairsplus.backtest import run_backtest
+
+mlflow.set_experiment("PairsPlus-Hyperparameter-Tuning")
+
 
 def objective(trial):
     params = {
@@ -18,22 +23,30 @@ def objective(trial):
 
     return score
 
+
 if __name__ == "__main__":
     study = optuna.create_study(direction="maximize")
     study.optimize(objective, n_trials=50)
 
     best_trial = study.best_trial
 
-    print("\n" + "="*40)
+    print("\n" + "=" * 40)
     print("✅ BEST TRIAL RESULTS")
-    print("="*40)
+    print("=" * 40)
     print(f"⭐ Best Score: {best_trial.value:.2f}")
     print("🔎 Best Hyperparameters:")
     for k, v in best_trial.params.items():
         print(f"   - {k}: {v}")
-    print("="*40 + "\n")
+    print("=" * 40 + "\n")
 
-    # Also log best trial separately to MLflow
+    # Log best trial to MLflow
     with mlflow.start_run(run_name="best_trial"):
         mlflow.log_params(best_trial.params)
         mlflow.log_metric("score", best_trial.value)
+
+    # Save best hyperparameters to JSON file
+    best_params_path = Path("best_hyperparams.json")
+    with open(best_params_path, "w") as f:
+        json.dump(best_trial.params, f, indent=2)
+
+    print(f"\n✅ Best hyperparameters saved to {best_params_path.resolve()}\n")
