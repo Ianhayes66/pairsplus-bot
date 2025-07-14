@@ -17,3 +17,6 @@ __pycache__/
 
 # VS Code settings
 .vscode/
+
+mlruns/
+best_hyperparams.json
