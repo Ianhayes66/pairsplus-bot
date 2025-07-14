@@ -35,7 +35,7 @@ from .config import (
 )
 
 # === Logging Setup ===
-LOG_FILE = BASE_DIR / "trade_Log.txt"
+LOG_FILE = BASE_DIR / "trade_log.txt"
 TRADE_LOG_CSV = BASE_DIR / "positions.csv"
 
 log_format = "%(asctime)s | %(levelname)s | %(name)s | %(message)s"
