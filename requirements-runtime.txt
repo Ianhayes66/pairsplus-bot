@@ -1,9 +1,13 @@
 alpaca-py==0.42.0
-prometheus-client==0.22.1
-python-dotenv==1.1.1
-schedule==1.2.2
 pandas==2.3.1
-scipy==1.16.0
+numpy==2.3.1
 statsmodels==0.14.5
+scipy==1.16.0
+prometheus_client==0.22.1
+schedule==1.2.2
+python-dotenv==1.1.1
 requests==2.32.4
+websocket-client==1.8.0
+websockets==15.0.1
+yfinance==0.2.65
 loguru==0.7.3
