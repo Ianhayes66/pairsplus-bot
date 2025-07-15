@@ -23,3 +23,6 @@ best_hyperparams.json
 
 positions.json
 trade_log.txt
+
+# .gitignore
+requirements.txt
