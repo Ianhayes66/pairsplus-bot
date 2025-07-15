@@ -1,3 +1,9 @@
+"""
+pairsplus/hyperparams.py
+
+Loads best hyperparameters from JSON.
+"""
+
 import json
 from pathlib import Path
 

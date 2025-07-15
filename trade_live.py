@@ -9,13 +9,22 @@ Prometheus metrics server.
 import asyncio
 import time
 import schedule
-import os
 import json
 from pathlib import Path
+
 from pairsplus import data_io, pairs, signals, execution
 from pairsplus.notifier import send_discord_message
-from prometheus_client import start_http_server, Counter
 from pairsplus.hyperparams import load_best_hyperparameters
+from pairsplus.config import (
+    ALPACA_KEY,
+    ALPACA_SECRET,
+    METRICS_PORT,
+    POLLING_INTERVAL_MINUTES,
+    LIVE_MODE,
+    UNIVERSE
+)
+
+from prometheus_client import start_http_server, Counter
 
 # ----------------- SSL / Certificates -----------------
 import ssl
@@ -34,7 +43,6 @@ ENTRIES_TOTAL = Counter("trade_entries_total", "Total number of new trades enter
 EXITS_TOTAL = Counter("trade_exits_total", "Total number of trades exited")
 
 # ----------------- Metrics Server ---------------------
-METRICS_PORT = int(os.getenv("METRICS_PORT", "8000"))
 try:
     start_http_server(METRICS_PORT)
     print(f"[Metrics] Prometheus available at http://localhost:{METRICS_PORT}/metrics")
@@ -92,15 +100,10 @@ try:
 except ImportError:
     StockDataStream = None
 
-ALPACA_KEY = os.getenv("ALPACA_KEY")
-ALPACA_SECRET = os.getenv("ALPACA_SECRET")
-
 async def run_websocket_live():
     """Run trading loop in WebSocket mode using Alpaca's data stream."""
     if not StockDataStream:
         raise ImportError("alpaca-py package is required for websocket mode.")
-
-    from pairsplus.config import UNIVERSE
 
     stream = StockDataStream(ALPACA_KEY, ALPACA_SECRET)
 
@@ -190,20 +193,18 @@ def schedule_polling_loop():
         print("[Polling] Running trading job...")
         run_trading_logic()
 
-    polling_interval = int(os.getenv("POLLING_INTERVAL_MINUTES", "60"))
-    schedule.every(polling_interval).minutes.do(job)
+    schedule.every(POLLING_INTERVAL_MINUTES).minutes.do(job)
 
-    print(f"[Polling] Starting schedule loop every {polling_interval} minutes.")
+    print(f"[Polling] Starting schedule loop every {POLLING_INTERVAL_MINUTES} minutes.")
     while True:
         schedule.run_pending()
         time.sleep(30)
 
 # ----------------- CLI Entrypoint --------------------
 if __name__ == "__main__":
-    mode = os.getenv("LIVE_MODE", "websocket").lower()
-    send_discord_message(f"🤖 Bot starting in {mode.upper()} mode.")
+    send_discord_message(f"🤖 Bot starting in {LIVE_MODE.upper()} mode.")
     load_positions()
-    if mode == "polling":
+    if LIVE_MODE == "polling":
         schedule_polling_loop()
     else:
         asyncio.run(run_websocket_live())

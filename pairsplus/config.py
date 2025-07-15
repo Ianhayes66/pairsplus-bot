@@ -1,43 +1,53 @@
 """
 pairsplus/config.py
 
-Loads environment variables and defines global configuration constants
-for the trading bot.
+Loads and validates environment variables for the trading bot.
 """
 
 from pathlib import Path
 import os
 from dotenv import load_dotenv
 
-# --- Project directory ---
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# --- Load .env variables early ---
+# Load .env
 load_dotenv(BASE_DIR / ".env")
 
-# --- Alpaca Credentials ---
-ALPACA_KEY = os.getenv("ALPACA_KEY")
-ALPACA_SECRET = os.getenv("ALPACA_SECRET")
-BASE_URL = "https://paper-api.alpaca.markets"
+def get_env_var(name: str) -> str:
+    value = os.getenv(name)
+    if value is None or value.strip() == "":
+        raise EnvironmentError(
+            f"⚠️ Missing required environment variable: {name}. "
+            f"Check your .env file or environment settings."
+        )
+    return value
 
-# --- Data Directory ---
+# --- Required Secrets ---
+ALPACA_KEY = get_env_var("ALPACA_KEY")
+ALPACA_SECRET = get_env_var("ALPACA_SECRET")
+DISCORD_WEBHOOK_URL = get_env_var("DISCORD_WEBHOOK_URL")
+
+# --- Execution Config ---
+ORDER_TYPE = get_env_var("ORDER_TYPE").upper()
+PEG_DISTANCE = float(get_env_var("PEG_DISTANCE"))
+SPLIT_NOTIONAL = float(get_env_var("SPLIT_NOTIONAL"))
+
+# --- Strategy / Signal Parameters ---
+LOOKBACK_DAYS = int(get_env_var("LOOKBACK_DAYS"))
+ROLLING_WINDOW = int(get_env_var("ROLLING_WINDOW"))
+Z_THRESHOLD = float(get_env_var("Z_THRESHOLD"))
+KALMAN_COV = float(get_env_var("KALMAN_COV"))
+
+# --- Infra / Monitoring ---
+METRICS_PORT = int(get_env_var("METRICS_PORT"))
+POLLING_INTERVAL_MINUTES = int(get_env_var("POLLING_INTERVAL_MINUTES"))
+
+# --- Static ---
+BASE_URL = "https://paper-api.alpaca.markets"
 DATA_DIR = BASE_DIR / "data"
 DATA_DIR.mkdir(exist_ok=True)
 
-# --- Universe of Stocks ---
 UNIVERSE = [
     "AAPL", "MSFT", "AMZN", "GOOGL", "META",
     "TSLA", "NVDA", "JPM", "V", "BAC"
 ]
-
-# --- Backtesting Settings ---
-LOOKBACK_DAYS = 180
-ROLLING_WINDOW = 60
-Z_THRESHOLD = 1.5
-
-# --- Execution Settings from .env ---
-ORDER_TYPE = os.getenv("ORDER_TYPE", "MARKET").strip().upper()
-PEG_DISTANCE = float(os.getenv("PEG_DISTANCE", "0.05"))
-SPLIT_NOTIONAL = os.getenv("SPLIT_NOTIONAL", "False").strip().lower() in ["true", "1", "yes"]
-DISCORD_WEBHOOK_URL = os.getenv("DISCORD_WEBHOOK_URL", "").strip()
-

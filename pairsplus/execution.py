@@ -31,7 +31,8 @@ from .config import (
     ORDER_TYPE,
     PEG_DISTANCE,
     SPLIT_NOTIONAL,
-    BASE_DIR
+    BASE_DIR,
+    METRICS_PORT
 )
 
 # === Logging Setup ===
@@ -271,8 +272,8 @@ def place_pair_trade(ticker_long, ticker_short, notional=50):
 # === Prometheus Exporter ===
 if __name__ == "__main__":
     try:
-        start_http_server(8000)
-        logger.info("[Metrics] Prometheus metrics server running at http://localhost:8000/metrics")
+        start_http_server(METRICS_PORT)
+        logger.info(f"[Metrics] Prometheus metrics server running at http://localhost:{METRICS_PORT}/metrics")
         while True:
             time.sleep(60)
     except Exception as e:

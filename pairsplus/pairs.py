@@ -1,12 +1,15 @@
+"""
+pairsplus/pairs.py
+
+Cointegration detection between asset price series.
+"""
+
 import pandas as pd
 import numpy as np
 from statsmodels.tsa.stattools import coint
 from itertools import combinations
 
 def clean_pair_series(s1, s2, min_length=30):
-    """
-    Clean two price series to align dates, drop NaNs and infs, ensure length.
-    """
     s1 = s1.replace([np.inf, -np.inf], np.nan).dropna()
     s2 = s2.replace([np.inf, -np.inf], np.nan).dropna()
 
@@ -20,22 +23,7 @@ def clean_pair_series(s1, s2, min_length=30):
 
     return s1, s2
 
-def find_cointegrated(
-    df: pd.DataFrame,
-    max_pairs: int = 10,
-    pval_threshold: float = 1.0
-) -> pd.DataFrame:
-    """
-    Finds the top cointegrated pairs in the dataframe.
-
-    Parameters:
-    - df: DataFrame of price series (columns = tickers).
-    - max_pairs: maximum number of pairs to return.
-    - pval_threshold: only include pairs with p-value below this.
-
-    Returns:
-    - DataFrame with columns: ['pval', 'a', 'b'].
-    """
+def find_cointegrated(df: pd.DataFrame, max_pairs: int = 10, pval_threshold: float = 1.0) -> pd.DataFrame:
     scores = []
     for (a, b) in combinations(df.columns, 2):
         s1, s2 = clean_pair_series(df[a], df[b])
@@ -55,24 +43,7 @@ def find_cointegrated(
 
     return pd.DataFrame(top_scores, columns=["pval", "a", "b"])
 
-def find_rolling_cointegrated(
-    df: pd.DataFrame,
-    window: int = 100,
-    max_pairs: int = 10,
-    pval_threshold: float = 1.0
-) -> pd.DataFrame:
-    """
-    Applies cointegration test over rolling windows.
-
-    Parameters:
-    - df: DataFrame of price series.
-    - window: window size in bars.
-    - max_pairs: max pairs per window.
-    - pval_threshold: filter for p-values below this.
-
-    Returns:
-    - DataFrame with columns: ['pval', 'a', 'b', 'start', 'end'].
-    """
+def find_rolling_cointegrated(df: pd.DataFrame, window: int = 100, max_pairs: int = 10, pval_threshold: float = 1.0) -> pd.DataFrame:
     results = []
     cols = df.columns
     combs = list(combinations(cols, 2))
@@ -98,7 +69,4 @@ def find_rolling_cointegrated(
         window_scores.sort()
         results.extend(window_scores[:max_pairs])
 
-    return pd.DataFrame(
-        results,
-        columns=["pval", "a", "b", "start", "end"]
-    )
+    return pd.DataFrame(results, columns=["pval", "a", "b", "start", "end"])

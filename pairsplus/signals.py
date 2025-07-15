@@ -1,27 +1,25 @@
+"""
+pairsplus/signals.py
+
+Generates trading signals based on spread z-scores and Kalman filtering.
+"""
+
 import pandas as pd
 import numpy as np
 from .tune_config import DEFAULT_HYPERPARAMS
 
 def zscore(series: pd.Series, rolling_window: int) -> pd.Series:
-    """
-    Calculate the rolling z-score of a time series.
-    """
     return (series - series.rolling(rolling_window).mean()) / series.rolling(rolling_window).std()
 
 def kalman_filter(spread: pd.Series, kalman_cov: float) -> pd.Series:
-    """
-    Optional: Apply a simple Kalman filter to smooth the spread.
-    """
     state_mean = 0.0
     state_var = 1.0
     result = []
 
     for obs in spread:
-        # Predict
         pred_mean = state_mean
         pred_var = state_var + kalman_cov
 
-        # Update
         kalman_gain = pred_var / (pred_var + kalman_cov)
         state_mean = pred_mean + kalman_gain * (obs - pred_mean)
         state_var = (1 - kalman_gain) * pred_var
@@ -38,9 +36,6 @@ def signal_from_spread(
     rolling_window: int = None,
     kalman_cov: float = None
 ) -> dict:
-    """
-    Generate trading signal based on spread z-score.
-    """
     z_threshold = z_threshold or DEFAULT_HYPERPARAMS["z_threshold"]
     rolling_window = rolling_window or DEFAULT_HYPERPARAMS["rolling_window"]
     kalman_cov = kalman_cov or DEFAULT_HYPERPARAMS["kalman_cov"]
