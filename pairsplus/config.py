@@ -22,6 +22,15 @@ def get_env_var(name: str) -> str:
         )
     return value
 
+def parse_bool(val: str) -> bool:
+    return str(val).strip().lower() in ("true", "1", "yes", "y")
+
+# --- Mode Setting ---
+LIVE_MODE = os.getenv("LIVE_MODE", "websocket").strip().lower()
+if LIVE_MODE not in ["websocket", "polling"]:
+    raise ValueError(
+        f"⚠️ Invalid LIVE_MODE: {LIVE_MODE}. Must be 'websocket' or 'polling'. Check your .env."
+    )
 # --- Required Secrets ---
 ALPACA_KEY = get_env_var("ALPACA_KEY")
 ALPACA_SECRET = get_env_var("ALPACA_SECRET")
@@ -30,7 +39,7 @@ DISCORD_WEBHOOK_URL = get_env_var("DISCORD_WEBHOOK_URL")
 # --- Execution Config ---
 ORDER_TYPE = get_env_var("ORDER_TYPE").upper()
 PEG_DISTANCE = float(get_env_var("PEG_DISTANCE"))
-SPLIT_NOTIONAL = float(get_env_var("SPLIT_NOTIONAL"))
+SPLIT_NOTIONAL = parse_bool(get_env_var("SPLIT_NOTIONAL"))
 
 # --- Strategy / Signal Parameters ---
 LOOKBACK_DAYS = int(get_env_var("LOOKBACK_DAYS"))
@@ -49,5 +58,7 @@ DATA_DIR.mkdir(exist_ok=True)
 
 UNIVERSE = [
     "AAPL", "MSFT", "AMZN", "GOOGL", "META",
-    "TSLA", "NVDA", "JPM", "V", "BAC"
+    "TSLA", "NVDA", "JPM", "V", "BAC",
+    "NFLX", "DIS", "PEP", "KO", "MCD",
+    "WMT", "COST", "UNH", "XOM", "CVS"
 ]
