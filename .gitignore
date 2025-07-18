@@ -26,3 +26,8 @@ trade_log.txt
 
 # .gitignore
 requirements.txt
+# Runtime Artifacts
+*.csv
+*.json
+*.txt
+mlruns/
